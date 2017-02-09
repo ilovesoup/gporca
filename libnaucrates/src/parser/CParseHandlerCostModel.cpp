@@ -46,7 +46,8 @@ CParseHandlerCostModel::CParseHandlerCostModel
 	)
 	:
 	CParseHandlerBase(pmp, pphm, pphRoot),
-	m_pcm(NULL)
+	m_pcm(NULL),
+	m_pphcp(NULL)
 {
 }
 
@@ -61,6 +62,7 @@ CParseHandlerCostModel::CParseHandlerCostModel
 CParseHandlerCostModel::~CParseHandlerCostModel()
 {
 	CRefCount::SafeRelease(m_pcm);
+	GPOS_DELETE(m_pphcp);
 }
 
 //---------------------------------------------------------------------------
@@ -74,16 +76,20 @@ CParseHandlerCostModel::~CParseHandlerCostModel()
 void
 CParseHandlerCostModel::StartElement
 	(
-	const XMLCh* const , //xmlszUri,
+	const XMLCh* const xmlszUri,
 	const XMLCh* const xmlszLocalname,
-	const XMLCh* const , //xmlszQname,
+	const XMLCh* const xmlszQname,
 	const Attributes& attrs
 	)
 {	
 	if (0 != XMLString::compareString(CDXLTokens::XmlstrToken(EdxltokenCostModelConfig), xmlszLocalname))
 	{
-		CWStringDynamic *pstr = CDXLUtils::PstrFromXMLCh(m_pphm->Pmm(), xmlszLocalname);
-		GPOS_RAISE(gpdxl::ExmaDXL, gpdxl::ExmiDXLUnexpectedTag, pstr->Wsz());
+		CParseHandlerBase *pph = CParseHandlerFactory::Pph(m_pmp, xmlszLocalname, m_pphm, this);
+		m_pphm->ActivateParseHandler(pph);
+
+		m_pphcp = pph;
+		pph->startElement(xmlszUri, xmlszLocalname, xmlszQname, attrs);
+		return;
 	}
 	
 	ULONG ulSegments = CDXLOperatorFactory::UlValueFromAttrs(m_pphm->Pmm(), attrs, EdxltokenSegmentsForCosting, EdxltokenCostModelConfig);
@@ -122,7 +128,7 @@ CParseHandlerCostModel::EndElement
 		CWStringDynamic *pstr = CDXLUtils::PstrFromXMLCh(m_pphm->Pmm(), xmlszLocalname);
 		GPOS_RAISE( gpdxl::ExmaDXL, gpdxl::ExmiDXLUnexpectedTag, pstr->Wsz());
 	}
-	
+
 	// deactivate handler
 	m_pphm->DeactivateHandler();
 }

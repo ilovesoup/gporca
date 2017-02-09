@@ -35,6 +35,7 @@ namespace gpdxl
 
 			// cost model
 			ICostModel *m_pcm;
+			CParseHandlerBase *m_pphcp;
 			
 			// private copy ctor
 			CParseHandlerCostModel(const CParseHandlerCostModel&); 
